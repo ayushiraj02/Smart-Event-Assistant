@@ -7,45 +7,79 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="ambient-glow glow-one" aria-hidden="true"></div>
-  <div class="ambient-glow glow-two" aria-hidden="true"></div>
+  <div class="bg-noise" aria-hidden="true"></div>
+  <div class="stadium-ring ring-one" aria-hidden="true"></div>
+  <div class="stadium-ring ring-two" aria-hidden="true"></div>
 
   <main class="app-shell">
-    <header class="hero">
-      <p class="eyebrow">Live Navigation</p>
+    <header class="hero glass">
+      <p class="eyebrow">Venue Intelligence</p>
       <h1>Smart Event Assistant</h1>
-      <p class="subtitle">Choose your priority and discover the most efficient zones in seconds.</p>
+      <p class="subtitle">AI-powered crowd and navigation system</p>
     </header>
 
-    <section class="controls card" aria-label="Search controls">
-      <label for="preference">User Preference</label>
-      <div class="controls-row">
-        <select id="preference" name="preference">
-          <option value="Entry">Entry</option>
-          <option value="Food">Food</option>
-          <option value="Restroom">Restroom</option>
-        </select>
-        <button id="findButton" type="button">Find Best Zones</button>
+    <section class="mode-toggle glass" aria-label="Mode Toggle">
+      <p class="section-label">Mode Toggle</p>
+      <div class="toggle-row" id="modeToggle">
+        <button class="mode-btn active" type="button" data-mode="entry">Entry Mode</button>
+        <button class="mode-btn" type="button" data-mode="food">Food Mode</button>
+        <button class="mode-btn" type="button" data-mode="exit">Exit Mode</button>
+      </div>
+
+      <div class="action-row">
+        <button id="findButton" type="button" class="primary-btn">Refresh Insights</button>
       </div>
 
       <p id="errorMessage" class="error-message hidden" role="alert"></p>
-
       <div id="loading" class="loading hidden" aria-live="polite">
         <span class="spinner" aria-hidden="true"></span>
-        <span>Analyzing crowd movement...</span>
+        <span>Syncing live zone intelligence...</span>
       </div>
     </section>
 
-    <section class="zones-section">
-      <h2>Zones List</h2>
-      <div id="zonesList" class="zones-grid" aria-live="polite"></div>
+    <section class="dashboard-grid">
+      <article class="metric-card glass">
+        <p>Total Zones</p>
+        <h2 id="metricTotalZones">0</h2>
+      </article>
+      <article class="metric-card glass">
+        <p>Least Crowded Zone</p>
+        <h2 id="metricLeastCrowded">-</h2>
+      </article>
+      <article class="metric-card glass">
+        <p>Average Wait Time</p>
+        <h2 id="metricAvgWait">0 min</h2>
+      </article>
     </section>
 
-    <section class="recommendation card">
-      <h2>Recommendation</h2>
-      <div id="recommendationContent">
-        <p class="muted">Run a search to view best zones with score above 70.</p>
-      </div>
+    <section id="alertBanner" class="alert-banner hidden" aria-live="polite"></section>
+
+    <section class="main-grid">
+      <section class="zones-panel glass">
+        <div class="panel-head">
+          <h3>Zones List</h3>
+        </div>
+        <div id="zonesList" class="zones-grid" aria-live="polite"></div>
+      </section>
+
+      <aside class="right-rail">
+        <section class="recommendation glass">
+          <h3>Recommendation Panel</h3>
+          <div id="recommendationContent">
+            <p class="muted">Best zones will appear here.</p>
+          </div>
+        </section>
+
+        <section class="assistant-box glass">
+          <h3>AI Assistant</h3>
+          <p class="assistant-hint">Ask a quick question, for example: best route now or best food option.</p>
+          <div class="assistant-row">
+            <input id="chatInput" type="text" placeholder="Ask about best zones..." />
+            <button id="chatButton" type="button" class="secondary-btn">Ask</button>
+          </div>
+          <p id="chatOutput" class="chat-output">Assistant response will appear here.</p>
+        </section>
+      </aside>
     </section>
   </main>
 

@@ -1,11 +1,20 @@
 const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
-const preferenceSelect = document.getElementById('preference');
 const findButton = document.getElementById('findButton');
+const modeToggle = document.getElementById('modeToggle');
 const zonesList = document.getElementById('zonesList');
 const recommendationContent = document.getElementById('recommendationContent');
 const loading = document.getElementById('loading');
 const errorMessage = document.getElementById('errorMessage');
+const alertBanner = document.getElementById('alertBanner');
+const metricTotalZones = document.getElementById('metricTotalZones');
+const metricLeastCrowded = document.getElementById('metricLeastCrowded');
+const metricAvgWait = document.getElementById('metricAvgWait');
+const chatInput = document.getElementById('chatInput');
+const chatButton = document.getElementById('chatButton');
+const chatOutput = document.getElementById('chatOutput');
+
+let activeMode = 'entry';
 
 function zoneTypeFromName(name) {
   const lowerName = name.toLowerCase();
@@ -23,13 +32,13 @@ function zoneTypeFromName(name) {
 
 function zoneIconMarkup(type) {
   if (type === 'gate') {
-    return '<span class="zone-icon" aria-hidden="true">G</span>';
+    return '<span class="zone-icon" aria-hidden="true">GT</span>';
   }
   if (type === 'food') {
-    return '<span class="zone-icon" aria-hidden="true">F</span>';
+    return '<span class="zone-icon" aria-hidden="true">FD</span>';
   }
-  if (type === 'restroom') {
-    return '<span class="zone-icon" aria-hidden="true">R</span>';
+  if (type === 'exit') {
+    return '<span class="zone-icon" aria-hidden="true">EX</span>';
   }
   return '<span class="zone-icon" aria-hidden="true">Z</span>';
 }
@@ -47,6 +56,13 @@ function scoreClass(score) {
 function zoneCardMarkup(zone, index) {
   const safeStatus = (zone.status || 'Unknown').replace(' crowd', '');
   const zoneType = zoneTypeFromName(zone.name);
+  const suggestedAction =
+    zone.score >= 70
+      ? 'Use this zone for faster access'
+      : zone.score >= 40
+        ? 'Moderate crowd, proceed with caution'
+        : 'High congestion, consider alternatives';
+
   return `
     <article class="zone-card ${scoreClass(zone.score)}" style="animation-delay: ${index * 60}ms">
       <div class="zone-head">
@@ -58,37 +74,37 @@ function zoneCardMarkup(zone, index) {
         <span>Wait time: <strong>${zone.waitTime} min</strong></span>
       </div>
       <span class="status-pill status-${safeStatus.toLowerCase()}">${safeStatus} crowd</span>
+      <p class="suggested-action">${suggestedAction}</p>
     </article>
   `;
 }
 
 function updateRecommendation(zones) {
-  const bestZones = zones.filter((zone) => zone.score > 70).sort((a, b) => b.score - a.score);
+  const topTwo = zones
+    .filter((zone) => zone.score > 70)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 2);
 
-  if (!bestZones.length) {
+  if (!topTwo.length) {
     recommendationContent.innerHTML = '<p class="muted">No zone crossed the recommendation threshold (> 70).</p>';
     return;
   }
 
-  const topZone = bestZones[0];
-  const otherZones = bestZones.slice(1);
-
-  const topCardMarkup = `
-    <article class="best-zone-card ${scoreClass(topZone.score)}">
-      <p class="best-zone-label">Top Recommendation</p>
-      <h3>${topZone.name}</h3>
-      <p class="best-zone-meta">Crowd score: <strong>${topZone.score}%</strong> | Wait time: <strong>${topZone.waitTime} min</strong></p>
-      <p class="best-zone-message">Use this zone for faster access and less waiting time</p>
-    </article>
+  recommendationContent.innerHTML = `
+    <div class="top-zone-grid">
+      ${topTwo
+        .map(
+          (zone, idx) => `
+            <article class="top-zone-card ${scoreClass(zone.score)}">
+              <h4>#${idx + 1} ${zone.name}</h4>
+              <p>Crowd score: <strong>${zone.score}%</strong> | Wait time: <strong>${zone.waitTime} min</strong></p>
+              <p>Use this zone for faster access and less waiting time</p>
+            </article>
+          `
+        )
+        .join('')}
+    </div>
   `;
-
-  const otherZoneMarkup = otherZones.length
-    ? `<ul class="recommendation-list">${otherZones
-        .map((zone) => `<li><strong>${zone.name}</strong> - ${zone.score}% score, ${zone.waitTime} min wait</li>`)
-        .join('')}</ul>`
-    : '';
-
-  recommendationContent.innerHTML = `${topCardMarkup}${otherZoneMarkup}`;
 }
 
 function renderZones(zones) {
@@ -131,16 +147,47 @@ async function fetchJson(path, options = {}) {
 
 function zoneMatchesPreference(zoneName, preference) {
   const lowerName = zoneName.toLowerCase();
-  if (preference === 'Food') {
+  if (preference === 'food') {
     return lowerName.includes('food');
   }
-  if (preference === 'Restroom') {
-    return lowerName.includes('restroom');
+  if (preference === 'exit') {
+    return lowerName.includes('exit');
   }
-  if (preference === 'Entry') {
+  if (preference === 'entry') {
     return lowerName.includes('gate');
   }
   return true;
+}
+
+function updateDashboard(zones) {
+  metricTotalZones.textContent = String(zones.length);
+  if (!zones.length) {
+    metricLeastCrowded.textContent = '-';
+    metricAvgWait.textContent = '0 min';
+    return;
+  }
+
+  const leastCrowded = zones.reduce((least, zone) =>
+    zone.crowdLevel < least.crowdLevel ? zone : least
+  );
+  const totalWait = zones.reduce((sum, zone) => sum + zone.waitTime, 0);
+  const avgWait = Math.round((totalWait / zones.length) * 10) / 10;
+
+  metricLeastCrowded.textContent = leastCrowded.name;
+  metricAvgWait.textContent = `${avgWait} min`;
+}
+
+function updateAlerts(alertZones, mode) {
+  const filteredAlerts = alertZones.filter((zone) => zoneMatchesPreference(zone.name, mode));
+  if (!filteredAlerts.length) {
+    alertBanner.textContent = '';
+    alertBanner.classList.add('hidden');
+    return;
+  }
+
+  const names = filteredAlerts.map((zone) => zone.name).join(', ');
+  alertBanner.textContent = `⚠ This area is overcrowded, consider alternative routes: ${names}`;
+  alertBanner.classList.remove('hidden');
 }
 
 async function getScoredZones() {
@@ -154,6 +201,7 @@ async function getScoredZones() {
     return {
       id: zone.id,
       name: zone.name,
+      crowdLevel: zone.crowd_level,
       waitTime: zone.wait_time,
       score: scoreData.crowd_score,
       status: (scoreData.status || '').replace(' crowd', '')
@@ -173,10 +221,16 @@ async function getRecommendedZones() {
   return recommended.map((zone) => ({
     id: zone.id,
     name: zone.name,
+    crowdLevel: zone.crowd_level,
     waitTime: zone.wait_time,
     score: 100 - zone.crowd_level,
-    status: zone.crowd_level < 35 ? 'Low' : zone.crowd_level <= 70 ? 'Medium' : 'High'
+    status: (100 - zone.crowd_level) > 70 ? 'Low' : (100 - zone.crowd_level) >= 40 ? 'Medium' : 'High'
   }));
+}
+
+async function getAlertZones() {
+  const data = await fetchJson('/alerts');
+  return data.overcrowded_zones || [];
 }
 
 function showLoading(isLoading) {
@@ -186,31 +240,80 @@ function showLoading(isLoading) {
 }
 
 async function loadZonesAndRecommendations() {
-  const selectedPreference = preferenceSelect.value;
-
   showLoading(true);
   clearError();
 
   try {
-    const [scoredZones, recommendedZones] = await Promise.all([
+    const [scoredZones, recommendedZones, alertZones] = await Promise.all([
       getScoredZones(),
-      getRecommendedZones()
+      getRecommendedZones(),
+      getAlertZones()
     ]);
 
     const filteredScoredZones = scoredZones
-      .filter((zone) => zoneMatchesPreference(zone.name, selectedPreference))
+      .filter((zone) => zoneMatchesPreference(zone.name, activeMode))
       .sort((a, b) => b.score - a.score);
 
+    const filteredRecommendedZones = recommendedZones
+      .filter((zone) => zoneMatchesPreference(zone.name, activeMode))
+      .sort((a, b) => b.score - a.score);
+
+    updateDashboard(filteredScoredZones);
+    updateAlerts(alertZones, activeMode);
     renderZones(filteredScoredZones);
-    updateRecommendation(recommendedZones);
+    updateRecommendation(filteredRecommendedZones);
   } catch (error) {
     zonesList.innerHTML = '';
     recommendationContent.innerHTML = '<p class="muted">Recommendations unavailable.</p>';
+    alertBanner.classList.add('hidden');
     showError(error.message || 'Something went wrong while fetching zone data.');
   } finally {
     showLoading(false);
   }
 }
+
+async function askAssistant() {
+  const question = chatInput.value.trim();
+  if (!question) {
+    chatOutput.textContent = 'Please enter a question to continue.';
+    return;
+  }
+
+  chatButton.disabled = true;
+  chatButton.textContent = 'Thinking...';
+
+  try {
+    const response = await fetchJson('/chat', {
+      method: 'POST',
+      body: JSON.stringify({ question })
+    });
+    chatOutput.textContent = response.answer || 'No response available.';
+  } catch (error) {
+    chatOutput.textContent = error.message || 'Unable to fetch assistant response.';
+  } finally {
+    chatButton.disabled = false;
+    chatButton.textContent = 'Ask';
+  }
+}
+
+modeToggle.addEventListener('click', (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLButtonElement) || !target.dataset.mode) {
+    return;
+  }
+
+  activeMode = target.dataset.mode;
+  modeToggle.querySelectorAll('.mode-btn').forEach((btn) => btn.classList.remove('active'));
+  target.classList.add('active');
+  loadZonesAndRecommendations();
+});
+
+chatButton.addEventListener('click', askAssistant);
+chatInput.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') {
+    askAssistant();
+  }
+});
 
 findButton.addEventListener('click', loadZonesAndRecommendations);
 

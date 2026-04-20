@@ -41,6 +41,18 @@ class RecommendResponse(BaseModel):
     recommended_zones: List[Zone]
 
 
+class AlertResponse(BaseModel):
+    overcrowded_zones: List[Zone]
+
+
+class ChatRequest(BaseModel):
+    question: str
+
+
+class ChatResponse(BaseModel):
+    answer: str
+
+
 class UserInputResponse(BaseModel):
     message: str
     preference: str
@@ -48,11 +60,12 @@ class UserInputResponse(BaseModel):
 
 
 ZONES: List[Zone] = [
-    Zone(id=1, name="North Gate", crowd_level=25, wait_time=5),
-    Zone(id=2, name="South Gate", crowd_level=82, wait_time=22),
-    Zone(id=3, name="Food Court", crowd_level=40, wait_time=8),
-    Zone(id=4, name="Restroom Block A", crowd_level=18, wait_time=3),
-    Zone(id=5, name="East Stand", crowd_level=70, wait_time=15),
+    Zone(id=1, name="Gate A", crowd_level=24, wait_time=4),
+    Zone(id=2, name="Gate C", crowd_level=86, wait_time=18),
+    Zone(id=3, name="Food Court B", crowd_level=42, wait_time=9),
+    Zone(id=4, name="Food Court D", crowd_level=29, wait_time=6),
+    Zone(id=5, name="Exit North", crowd_level=35, wait_time=7),
+    Zone(id=6, name="Exit South", crowd_level=91, wait_time=21),
 ]
 
 
@@ -63,12 +76,29 @@ def find_zone(zone_id: int) -> Optional[Zone]:
     return None
 
 
-def zone_status(crowd_level: int) -> str:
-    if crowd_level < 35:
+def crowd_score(crowd_level: int) -> int:
+    return 100 - crowd_level
+
+
+def zone_status(score: int) -> str:
+    if score > 70:
         return "Low crowd"
-    if crowd_level <= 70:
+    if score >= 40:
         return "Medium crowd"
     return "High crowd"
+
+
+def least_crowded_zone() -> Optional[Zone]:
+    if not ZONES:
+        return None
+    return min(ZONES, key=lambda zone: zone.crowd_level)
+
+
+def best_food_zone() -> Optional[Zone]:
+    food_zones = [zone for zone in ZONES if "food" in zone.name.lower()]
+    if not food_zones:
+        return None
+    return min(food_zones, key=lambda zone: zone.crowd_level)
 
 
 @app.post("/api/user-input", response_model=UserInputResponse)
@@ -105,15 +135,46 @@ def score_zone(payload: ScoreRequest) -> ScoreResponse:
     if zone is None:
         raise HTTPException(status_code=404, detail="Zone not found")
 
-    crowd_score = 100 - zone.crowd_level
+    score = crowd_score(zone.crowd_level)
     return ScoreResponse(
         zone_id=zone.id,
-        crowd_score=crowd_score,
-        status=zone_status(zone.crowd_level),
+        crowd_score=score,
+        status=zone_status(score),
     )
 
 
 @app.post("/api/recommend", response_model=RecommendResponse)
 def recommend_zones() -> RecommendResponse:
-    recommended = [zone for zone in ZONES if (100 - zone.crowd_level) > 70]
+    recommended = [zone for zone in ZONES if crowd_score(zone.crowd_level) > 70]
     return RecommendResponse(recommended_zones=recommended)
+
+
+@app.get("/api/alerts", response_model=AlertResponse)
+def get_alerts() -> AlertResponse:
+    overcrowded = [zone for zone in ZONES if zone.crowd_level > 80]
+    return AlertResponse(overcrowded_zones=overcrowded)
+
+
+@app.post("/api/chat", response_model=ChatResponse)
+def chat_assistant(payload: ChatRequest) -> ChatResponse:
+    question = payload.question.strip().lower()
+
+    if "best" in question:
+        best_zone = least_crowded_zone()
+        if best_zone is None:
+            return ChatResponse(answer="No zones are available right now.")
+        return ChatResponse(
+            answer=f"Best option now is {best_zone.name} with crowd level {best_zone.crowd_level}% and wait time {best_zone.wait_time} minutes."
+        )
+
+    if "food" in question:
+        food_zone = best_food_zone()
+        if food_zone is None:
+            return ChatResponse(answer="No food zones are available right now.")
+        return ChatResponse(
+            answer=f"Best food option is {food_zone.name} with crowd level {food_zone.crowd_level}% and wait time {food_zone.wait_time} minutes."
+        )
+
+    return ChatResponse(
+        answer="Ask about best route or food to get a zone recommendation."
+    )
