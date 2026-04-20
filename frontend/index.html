@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Event Assistant</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="ambient-glow glow-one" aria-hidden="true"></div>
+  <div class="ambient-glow glow-two" aria-hidden="true"></div>
+
+  <main class="app-shell">
+    <header class="hero">
+      <p class="eyebrow">Live Navigation</p>
+      <h1>Smart Event Assistant</h1>
+      <p class="subtitle">Choose your priority and discover the most efficient zones in seconds.</p>
+    </header>
+
+    <section class="controls card" aria-label="Search controls">
+      <label for="preference">User Preference</label>
+      <div class="controls-row">
+        <select id="preference" name="preference">
+          <option value="Entry">Entry</option>
+          <option value="Food">Food</option>
+          <option value="Restroom">Restroom</option>
+        </select>
+        <button id="findButton" type="button">Find Best Zones</button>
+      </div>
+
+      <p id="errorMessage" class="error-message hidden" role="alert"></p>
+
+      <div id="loading" class="loading hidden" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        <span>Analyzing crowd movement...</span>
+      </div>
+    </section>
+
+    <section class="zones-section">
+      <h2>Zones List</h2>
+      <div id="zonesList" class="zones-grid" aria-live="polite"></div>
+    </section>
+
+    <section class="recommendation card">
+      <h2>Recommendation</h2>
+      <div id="recommendationContent">
+        <p class="muted">Run a search to view best zones with score above 70.</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
