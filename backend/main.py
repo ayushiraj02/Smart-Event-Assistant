@@ -60,12 +60,12 @@ class UserInputResponse(BaseModel):
 
 
 ZONES: List[Zone] = [
-    Zone(id=1, name="Gate A", crowd_level=24, wait_time=4),
-    Zone(id=2, name="Gate C", crowd_level=86, wait_time=18),
-    Zone(id=3, name="Food Court B", crowd_level=42, wait_time=9),
-    Zone(id=4, name="Food Court D", crowd_level=29, wait_time=6),
-    Zone(id=5, name="Exit North", crowd_level=35, wait_time=7),
-    Zone(id=6, name="Exit South", crowd_level=91, wait_time=21),
+    Zone(id=1, name="Gate B", crowd_level=22, wait_time=4),
+    Zone(id=2, name="Gate A", crowd_level=86, wait_time=18),
+    Zone(id=3, name="Food Court C", crowd_level=28, wait_time=6),
+    Zone(id=4, name="Food Court B", crowd_level=48, wait_time=9),
+    Zone(id=5, name="Exit Gate D", crowd_level=31, wait_time=7),
+    Zone(id=6, name="Exit Gate A", crowd_level=91, wait_time=21),
 ]
 
 

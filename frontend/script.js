@@ -7,6 +7,7 @@ const recommendationContent = document.getElementById('recommendationContent');
 const loading = document.getElementById('loading');
 const errorMessage = document.getElementById('errorMessage');
 const alertBanner = document.getElementById('alertBanner');
+const routeSuggestionText = document.getElementById('routeSuggestionText');
 const metricTotalZones = document.getElementById('metricTotalZones');
 const metricLeastCrowded = document.getElementById('metricLeastCrowded');
 const metricAvgWait = document.getElementById('metricAvgWait');
@@ -15,6 +16,7 @@ const chatButton = document.getElementById('chatButton');
 const chatOutput = document.getElementById('chatOutput');
 
 let activeMode = 'entry';
+let refreshTimerId = null;
 
 function zoneTypeFromName(name) {
   const lowerName = name.toLowerCase();
@@ -162,6 +164,20 @@ function zoneMatchesPreference(zoneName, preference) {
   return true;
 }
 
+function zoneCategory(zoneName) {
+  const lowerName = zoneName.toLowerCase();
+  if (lowerName.includes('gate')) {
+    return 'entry';
+  }
+  if (lowerName.includes('food')) {
+    return 'food';
+  }
+  if (lowerName.includes('exit')) {
+    return 'exit';
+  }
+  return 'other';
+}
+
 function updateDashboard(zones) {
   metricTotalZones.textContent = String(zones.length);
   if (!zones.length) {
@@ -191,6 +207,24 @@ function updateAlerts(alertZones, mode) {
   const names = filteredAlerts.map((zone) => zone.name).join(', ');
   alertBanner.textContent = `⚠ This area is overcrowded, consider alternative routes: ${names}`;
   alertBanner.classList.remove('hidden');
+}
+
+function updateBestRoute(zones) {
+  const bestByCategory = ['entry', 'food', 'exit'].map((category) => {
+    const categoryZones = zones.filter((zone) => zoneCategory(zone.name) === category);
+    if (!categoryZones.length) {
+      return null;
+    }
+    return categoryZones.sort((a, b) => b.score - a.score)[0];
+  });
+
+  const routeNames = bestByCategory.map((zone) => zone && zone.name);
+  if (routeNames.some((name) => !name)) {
+    routeSuggestionText.textContent = 'Route suggestion unavailable.';
+    return;
+  }
+
+  routeSuggestionText.textContent = `Use ${routeNames[0]} → ${routeNames[1]} → ${routeNames[2]}`;
 }
 
 async function getScoredZones() {
@@ -239,11 +273,14 @@ async function getAlertZones() {
 function showLoading(isLoading) {
   loading.classList.toggle('hidden', !isLoading);
   findButton.disabled = isLoading;
-  findButton.textContent = isLoading ? 'Finding...' : 'Find Best Zones';
+  findButton.textContent = isLoading ? 'Finding...' : 'Refresh Insights';
 }
 
-async function loadZonesAndRecommendations() {
-  showLoading(true);
+async function loadZonesAndRecommendations(options = {}) {
+  const { showLoader = true } = options;
+  if (showLoader) {
+    showLoading(true);
+  }
   clearError();
 
   try {
@@ -263,6 +300,7 @@ async function loadZonesAndRecommendations() {
 
     updateDashboard(filteredScoredZones);
     updateAlerts(alertZones, activeMode);
+    updateBestRoute(scoredZones);
     renderZones(filteredScoredZones);
     updateRecommendation(filteredRecommendedZones);
   } catch (error) {
@@ -271,7 +309,13 @@ async function loadZonesAndRecommendations() {
     alertBanner.classList.add('hidden');
     showError(error.message || 'Something went wrong while fetching zone data.');
   } finally {
-    showLoading(false);
+    if (showLoader) {
+      showLoading(false);
+    } else {
+      loading.classList.add('hidden');
+      findButton.disabled = false;
+      findButton.textContent = 'Refresh Insights';
+    }
   }
 }
 
@@ -320,4 +364,15 @@ chatInput.addEventListener('keydown', (event) => {
 
 findButton.addEventListener('click', loadZonesAndRecommendations);
 
-loadZonesAndRecommendations();
+function startAutoRefresh() {
+  if (refreshTimerId) {
+    window.clearInterval(refreshTimerId);
+  }
+
+  refreshTimerId = window.setInterval(() => {
+    loadZonesAndRecommendations({ showLoader: false });
+  }, 10000);
+}
+
+loadZonesAndRecommendations({ showLoader: true });
+startAutoRefresh();

@@ -176,6 +176,15 @@ h1 {
   color: #c1d5f3;
 }
 
+.live-update-text {
+  margin: 0.45rem 0 0;
+  color: #8bb8e8;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  opacity: 0.9;
+  animation: pulseSoft 1.8s ease-in-out infinite;
+}
+
 .spinner {
   width: 15px;
   height: 15px;
@@ -228,6 +237,56 @@ h1 {
   border-radius: 12px;
   padding: 0.66rem 0.85rem;
   font-weight: 600;
+}
+
+.route-section {
+  margin-top: 0.85rem;
+  padding: 1rem;
+}
+
+.route-card {
+  margin-top: 0.75rem;
+  border-radius: 16px;
+  padding: 1rem 1.05rem;
+  background: linear-gradient(145deg, rgba(8, 18, 35, 0.92) 0%, rgba(14, 32, 58, 0.9) 100%);
+  border: 1px solid rgba(100, 182, 255, 0.28);
+  position: relative;
+  overflow: hidden;
+}
+
+.route-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), transparent 38%, rgba(52, 211, 153, 0.12));
+  pointer-events: none;
+}
+
+.route-card-highlight {
+  box-shadow: 0 0 0 1px rgba(125, 211, 252, 0.2), 0 18px 48px rgba(0, 12, 34, 0.62);
+}
+
+.route-label {
+  position: relative;
+  margin: 0;
+  color: #91d5ff;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.route-card h4 {
+  position: relative;
+  margin: 0.45rem 0 0;
+  font-size: clamp(1.2rem, 2.4vw, 1.65rem);
+  line-height: 1.25;
+}
+
+.route-note {
+  position: relative;
+  margin: 0.55rem 0 0;
+  color: #c2d4ee;
 }
 
 .main-grid {
@@ -421,6 +480,16 @@ h1 {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes pulseSoft {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
   }
 }
 

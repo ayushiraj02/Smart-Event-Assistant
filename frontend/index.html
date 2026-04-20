@@ -35,6 +35,8 @@
         <span class="spinner" aria-hidden="true"></span>
         <span>Syncing live zone intelligence...</span>
       </div>
+
+      <p class="live-update-text">Live updating...</p>
     </section>
 
     <section class="dashboard-grid">
@@ -53,6 +55,17 @@
     </section>
 
     <section id="alertBanner" class="alert-banner hidden" aria-live="polite"></section>
+
+    <section class="route-section glass">
+      <div class="panel-head">
+        <h3>Best Route Suggestion</h3>
+      </div>
+      <article id="routeSuggestionCard" class="route-card route-card-highlight">
+        <p class="route-label">Fastest route based on lowest crowd zones</p>
+        <h4 id="routeSuggestionText">Use Gate B → Food Court C → Exit Gate D</h4>
+        <p class="route-note">This route prioritizes the best entry, food, and exit path for smoother movement.</p>
+      </article>
+    </section>
 
     <section class="main-grid">
       <section class="zones-panel glass">
