@@ -21,6 +21,9 @@ function zoneTypeFromName(name) {
   if (lowerName.includes('food')) {
     return 'food';
   }
+  if (lowerName.includes('exit')) {
+    return 'exit';
+  }
   if (lowerName.includes('restroom')) {
     return 'restroom';
   }
