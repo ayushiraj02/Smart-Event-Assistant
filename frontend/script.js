@@ -1,5 +1,5 @@
 // const API_BASE_URL = 'http://127.0.0.1:8000/api';
-const API_BASE_URL = 'https://smart-event-assistant.onrender.com';
+const API_BASE_URL = "https://smart-event-assistant.onrender.com/api";
 
 const findButton = document.getElementById('findButton');
 const modeToggle = document.getElementById('modeToggle');
